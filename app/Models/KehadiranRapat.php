@@ -13,12 +13,22 @@ class KehadiranRapat extends Model
         'nip_nik',
         'unit_kerja',
         'jabatan_tugas',
-        'tanda_tangan',
-        'rapat_id', // Foreign key
-        'status',
         'instansi',
-        'no_telepon',
         'email',
+        'no_telepon',
+        'tanda_tangan',
+        'status',
+        'rapat_id',
+        // === KOLOM BARU FITUR 1 ===
+        'metode_kehadiran',
+        'ip_address',
+        'location_data',
+        'is_lokasi_valid',
+        'catatan_validasi',
+    ];
+
+    protected $casts = [
+        'is_lokasi_valid' => 'boolean',
     ];
 
     // Relasi ke Rapat
