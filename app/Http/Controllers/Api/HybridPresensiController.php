@@ -36,11 +36,11 @@ class HybridPresensiController extends Controller
                 'lokasi_rapat'        => $rapat->lokasi_rapat,
                 'link_meeting'        => $rapat->link_meeting,
                 // Flag untuk HybridToggle: apakah tampilkan pilihan Online/Offline?
-                'show_hybrid_toggle'  => $rapat->jenis_rapat === 'Hybrid',
+                'show_hybrid_toggle'  => strtolower($rapat->jenis_rapat) === 'hybrid',
                 // Default metode jika bukan Hybrid
-                'default_metode'      => match ($rapat->jenis_rapat) {
-                    'Luring' => 'Offline',
-                    'Daring' => 'Online',
+                'default_metode'      => match (strtolower($rapat->jenis_rapat)) {
+                    'luring' => 'Offline',
+                    'daring' => 'Online',
                     default  => null,
                 },
             ],
