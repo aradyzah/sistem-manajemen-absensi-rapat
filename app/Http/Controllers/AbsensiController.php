@@ -72,29 +72,61 @@ class AbsensiController extends Controller
             $catatanValidasi = $hasilValidasi['catatan'];
         }
 
-        // === SIMPAN KEHADIRAN ===
-        $kehadiran = KehadiranRapat::create([
-            'rapat_id'          => $rapat->id,
-            'nama'              => $validated['nama'],
-            'nip_nik'           => $validated['nip_nik'] ?? null,
-            'unit_kerja'        => $validated['unit_kerja'],
-            'jabatan_tugas'     => $validated['jabatan_tugas'],
-            'instansi'          => $validated['instansi'] ?? null,
-            'email'             => $validated['email'] ?? null,
-            'no_telepon'        => $validated['no_telepon'] ?? null,
-            'tanda_tangan'      => $validated['tanda_tangan'] ?? null,
-            'status'            => 'Hadir',
-            // === FIELD BARU ===
-            'metode_kehadiran'  => $metodeKehadiran,
-            'ip_address'        => $ipAddress,
-            'location_data'     => $validated['location_data'] ?? null,
-            'is_lokasi_valid'   => $isLokasiValid,
-            'catatan_validasi'  => $catatanValidasi,
-        ]);
+        // === SIMPAN KEHADIRAN (Update if exists, Create if new) ===
+        try {
+            $searchData = [
+                'rapat_id' => $rapat->id,
+            ];
 
-        // Kembalikan response sesuai format yang sudah ada di project
-        // (sesuaikan dengan return existing submitForm — redirect/JSON)
-        return back()->with('success', 'Absensi berhasil dicatat.');
+            // Jika NIP diisi, gunakan NIP sebagai kunci pencarian untuk update
+            // Jika NIP kosong (eksternal), biarkan sistem membuat record baru
+            if (!empty($validated['nip_nik'])) {
+                $searchData['nip_nik'] = $validated['nip_nik'];
+            } else {
+                // Untuk eksternal tanpa NIP, tambahkan kunci unik lain jika perlu, 
+                // sementara kita biarkan create baru dengan menambahkan dummy unik atau cukup create.
+                // Namun karena ada constraint unique di DB (NIP-Rapat), NIP null biasanya tidak dianggap duplikat oleh DB.
+                $searchData['nip_nik'] = null;
+                $searchData['nama'] = $validated['nama']; // Tambahan agar eksternal tidak tertukar
+            }
+
+            $kehadiran = KehadiranRapat::updateOrCreate(
+                $searchData,
+                [
+                    'nama'              => $validated['nama'],
+                    'unit_kerja'        => $validated['unit_kerja'],
+                    'jabatan_tugas'     => $validated['jabatan_tugas'],
+                    'instansi'          => $validated['instansi'] ?? null,
+                    'email'             => $validated['email'] ?? null,
+                    'no_telepon'        => $validated['no_telepon'] ?? null,
+                    'tanda_tangan'      => $validated['tanda_tangan'] ?? null,
+                    'status'            => 'Hadir',
+                    'metode_kehadiran'  => $metodeKehadiran,
+                    'ip_address'        => $ipAddress,
+                    'location_data'     => $validated['location_data'] ?? null,
+                    'is_lokasi_valid'   => $isLokasiValid,
+                    'catatan_validasi'  => $catatanValidasi,
+                ]
+            );
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Absensi berhasil dicatat. Terima kasih!'
+                ]);
+            }
+
+            return back()->with('success', 'Absensi berhasil dicatat. Terima kasih!');
+
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem saat menyimpan data: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->with('error', 'Gagal menyimpan absensi.');
+        }
     }
 
     // Untuk autofill by NIP/NIK

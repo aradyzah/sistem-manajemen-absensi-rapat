@@ -5,8 +5,15 @@
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <!-- Header Section -->
                 <div style="background-color: #002147;" class="px-8 py-6">
+                    <div class="mb-6">
+                        <a href="/" class="inline-flex items-center text-blue-200 hover:text-white transition-all group">
+                            <x-heroicon-o-arrow-left class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" />
+                            <span class="text-sm font-medium text-white/90">Kembali ke Beranda</span>
+                        </a>
+                    </div>
+
                     <div class="space-y-3">
-                        <h1 class="text-2xl font-bold text-white">
+                        <h1 class="text-2xl font-bold text-white leading-tight">
                             {{ $rapat->agenda_rapat }}
                         </h1>
 
@@ -153,49 +160,58 @@
                         </div>
 
                         <!-- === FITUR 1: Hybrid Toggle Section === -->
-                        <div id="hybrid-toggle-section" class="hidden space-y-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-sm animate__animated animate__fadeIn">
+                        @if($rapat->jenis_rapat === 'hybrid')
+                        <div id="hybrid-toggle-section" class="space-y-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-sm animate__animated animate__fadeIn">
                             <div class="flex items-center space-x-2">
                                 <div class="p-1.5 bg-blue-600 rounded-lg">
                                     <x-heroicon-o-adjustments-horizontal class="h-4 w-4 text-white" />
                                 </div>
-                                <label class="block text-sm font-bold text-blue-900">Metode Kehadiran</label>
+                                <label class="block text-sm font-bold text-blue-900">Metode Kehadiran <span class="text-red-500">*</span></label>
                             </div>
                             
                             <p class="text-xs text-blue-700 leading-relaxed">Rapat ini bersifat <span class="font-bold">Hybrid</span>. Silakan pilih bagaimana Anda mengikuti rapat ini:</p>
                             
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <!-- Opsi Offline -->
-                                <label class="relative flex flex-col p-4 bg-white border-2 border-transparent rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-offline">
-                                    <input type="radio" name="metode_kehadiran" value="Offline" class="sr-only peer">
-                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn">
+                                <label class="relative flex flex-col p-4 bg-white border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-offline">
+                                    <input type="radio" name="metode_kehadiran" value="Offline" class="sr-only peer" required>
+                                    
+                                    <!-- Background & Border Highlight (Stay when checked) -->
+                                    <div class="absolute inset-0 rounded-xl border-2 border-transparent peer-checked:border-blue-600 peer-checked:bg-blue-50/50 pointer-events-none transition-all"></div>
+                                    
+                                    <!-- Check Icon (Stay when checked) -->
+                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn z-10">
                                         <x-heroicon-o-check-circle class="h-6 w-6" />
                                     </div>
-                                    <div class="peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 absolute inset-0 rounded-xl -m-0.5 pointer-events-none"></div>
                                     
-                                    <div class="flex items-center space-x-3 mb-2">
+                                    <div class="relative z-10 flex items-center space-x-3 mb-2">
                                         <div class="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
                                             <x-heroicon-o-map-pin class="h-5 w-5 text-green-600" />
                                         </div>
                                         <span class="font-bold text-gray-900">Offline</span>
                                     </div>
-                                    <span class="text-xs text-gray-500">Hadir langsung di lokasi rapat (Luring)</span>
+                                    <span class="relative z-10 text-xs text-gray-500">Hadir langsung di lokasi rapat (Luring)</span>
                                 </label>
 
                                 <!-- Opsi Online -->
-                                <label class="relative flex flex-col p-4 bg-white border-2 border-transparent rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-online">
-                                    <input type="radio" name="metode_kehadiran" value="Online" class="sr-only peer">
-                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn">
+                                <label class="relative flex flex-col p-4 bg-white border-2 border-gray-200 rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-online">
+                                    <input type="radio" name="metode_kehadiran" value="Online" class="sr-only peer" required>
+                                    
+                                    <!-- Background & Border Highlight (Stay when checked) -->
+                                    <div class="absolute inset-0 rounded-xl border-2 border-transparent peer-checked:border-blue-600 peer-checked:bg-blue-50/50 pointer-events-none transition-all"></div>
+                                    
+                                    <!-- Check Icon (Stay when checked) -->
+                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn z-10">
                                         <x-heroicon-o-check-circle class="h-6 w-6" />
                                     </div>
-                                    <div class="peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 absolute inset-0 rounded-xl -m-0.5 pointer-events-none"></div>
                                     
-                                    <div class="flex items-center space-x-3 mb-2">
+                                    <div class="relative z-10 flex items-center space-x-3 mb-2">
                                         <div class="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
                                             <x-heroicon-o-video-camera class="h-5 w-5 text-blue-600" />
                                         </div>
                                         <span class="font-bold text-gray-900">Online</span>
                                     </div>
-                                    <span class="text-xs text-gray-500">Hadir melalui link meeting (Daring)</span>
+                                    <span class="relative z-10 text-xs text-gray-500">Hadir melalui link meeting (Daring)</span>
                                 </label>
                             </div>
 
@@ -208,6 +224,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
                         
                         <!-- Hidden Field untuk Data Lokasi -->
                         <input type="hidden" name="location_data" id="location_data">
@@ -324,18 +341,86 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    document.querySelector('form').addEventListener('submit', function (e) {
+    // === Handle Form Submit with SweetAlert2 ===
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        // 1. Validasi Tanda Tangan
         if (signaturePad.isEmpty()) {
-            e.preventDefault();
             Swal.fire({
                 icon: 'error',
                 title: 'Tanda Tangan Kosong',
                 text: 'Harap berikan tanda tangan Anda sebelum mengirim',
                 confirmButtonColor: '#3B82F6'
             });
-        } else {
-            document.getElementById('tanda_tangan').value = signaturePad.toDataURL('image/png');
+            return;
         }
+
+        // 2. Persiapkan Data
+        document.getElementById('tanda_tangan').value = signaturePad.toDataURL('image/png');
+        const formData = new FormData(form);
+
+        // 3. Tampilkan Loading
+        Swal.fire({
+            title: 'Memproses Absensi...',
+            text: 'Mohon tunggu sebentar',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            willOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // 4. Kirim Data via AJAX
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(async response => {
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Berhasil
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Absensi Berhasil!',
+                    text: data.message || 'Data kehadiran Anda telah tercatat di sistem.',
+                    confirmButtonColor: '#059669',
+                    confirmButtonText: 'Selesai'
+                }).then(() => {
+                    // Redirect atau Reset Form
+                    window.location.reload(); 
+                });
+            } else {
+                // Gagal (Error Validasi)
+                let errorMessages = '';
+                if (data.errors) {
+                    errorMessages = Object.values(data.errors).flat().join('<br>');
+                } else {
+                    errorMessages = data.message || 'Terjadi kesalahan saat memproses data.';
+                }
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Absensi Gagal',
+                    html: `<div class="text-left text-sm">${errorMessages}</div>`,
+                    confirmButtonColor: '#DC2626'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Kesalahan Sistem',
+                text: 'Gagal terhubung ke server. Silakan coba lagi nanti.',
+                confirmButtonColor: '#DC2626'
+            });
+        });
     });
 
     window.clearSignature = function () {
