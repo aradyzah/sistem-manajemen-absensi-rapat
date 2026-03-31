@@ -392,8 +392,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     confirmButtonColor: '#059669',
                     confirmButtonText: 'Selesai'
                 }).then(() => {
-                    // Redirect atau Reset Form
-                    window.location.reload(); 
+                    // Redirect ke beranda
+                    window.location.href = '/'; 
                 });
             } else {
                 // Gagal (Error Validasi)
