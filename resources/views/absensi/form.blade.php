@@ -152,6 +152,66 @@
                             </div>
                         </div>
 
+                        <!-- === FITUR 1: Hybrid Toggle Section === -->
+                        <div id="hybrid-toggle-section" class="hidden space-y-4 p-5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 shadow-sm animate__animated animate__fadeIn">
+                            <div class="flex items-center space-x-2">
+                                <div class="p-1.5 bg-blue-600 rounded-lg">
+                                    <x-heroicon-o-adjustments-horizontal class="h-4 w-4 text-white" />
+                                </div>
+                                <label class="block text-sm font-bold text-blue-900">Metode Kehadiran</label>
+                            </div>
+                            
+                            <p class="text-xs text-blue-700 leading-relaxed">Rapat ini bersifat <span class="font-bold">Hybrid</span>. Silakan pilih bagaimana Anda mengikuti rapat ini:</p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Opsi Offline -->
+                                <label class="relative flex flex-col p-4 bg-white border-2 border-transparent rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-offline">
+                                    <input type="radio" name="metode_kehadiran" value="Offline" class="sr-only peer">
+                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn">
+                                        <x-heroicon-o-check-circle class="h-6 w-6" />
+                                    </div>
+                                    <div class="peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 absolute inset-0 rounded-xl -m-0.5 pointer-events-none"></div>
+                                    
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <div class="p-2 bg-green-50 rounded-lg group-hover:bg-green-100 transition-colors">
+                                            <x-heroicon-o-map-pin class="h-5 w-5 text-green-600" />
+                                        </div>
+                                        <span class="font-bold text-gray-900">Offline</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">Hadir langsung di lokasi rapat (Luring)</span>
+                                </label>
+
+                                <!-- Opsi Online -->
+                                <label class="relative flex flex-col p-4 bg-white border-2 border-transparent rounded-xl cursor-pointer hover:border-blue-400 transition-all group shadow-sm" id="label-online">
+                                    <input type="radio" name="metode_kehadiran" value="Online" class="sr-only peer">
+                                    <div class="absolute top-3 right-3 hidden peer-checked:block text-blue-600 animate__animated animate__zoomIn">
+                                        <x-heroicon-o-check-circle class="h-6 w-6" />
+                                    </div>
+                                    <div class="peer-checked:border-blue-600 peer-checked:ring-2 peer-checked:ring-blue-100 absolute inset-0 rounded-xl -m-0.5 pointer-events-none"></div>
+                                    
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <div class="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                                            <x-heroicon-o-video-camera class="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <span class="font-bold text-gray-900">Online</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">Hadir melalui link meeting (Daring)</span>
+                                </label>
+                            </div>
+
+                            <!-- Feedback Validasi Lokasi -->
+                            <div id="location-feedback" class="hidden mt-3 p-4 rounded-xl text-sm flex items-start space-x-3 animate__animated animate__fadeIn border">
+                                <div id="feedback-icon-container" class="flex-shrink-0 mt-0.5"></div>
+                                <div class="flex-grow">
+                                    <p id="feedback-message" class="font-semibold"></p>
+                                    <p id="feedback-detail" class="text-xs mt-1 opacity-80"></p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden Field untuk Data Lokasi -->
+                        <input type="hidden" name="location_data" id="location_data">
+
                         <!-- Field untuk Eksternal -->
                         <div id="eksternal-fields" class="space-y-6 hidden">
                             <!-- Instansi -->
@@ -373,6 +433,128 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById('jabatan_tugas').value ||= data.jabatan_tugas || '';
         });
     });
+
+    // === FITUR 1: Hybrid Toggle & Lokasi Validation Logic ===
+    const uuid = "{{ $rapat->link_absensi }}";
+    const hybridSection = document.getElementById('hybrid-toggle-section');
+    const locationFeedback = document.getElementById('location-feedback');
+    const feedbackMessage = document.getElementById('feedback-message');
+    const feedbackDetail = document.getElementById('feedback-detail');
+    const feedbackIconContainer = document.getElementById('feedback-icon-container');
+    const locationDataInput = document.getElementById('location_data');
+
+    // 1. Cek jenis rapat saat load
+    fetch(`/api/rapat/${uuid}/jenis`)
+        .then(res => res.json())
+        .then(response => {
+            if (response.success && response.data.show_hybrid_toggle) {
+                hybridSection.classList.remove('hidden');
+                // Tambahkan required attribute secara dinamis
+                document.querySelectorAll('input[name="metode_kehadiran"]').forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
+            }
+        });
+
+    // 2. Handle perubahan metode kehadiran
+    document.querySelectorAll('input[name="metode_kehadiran"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const metode = this.value;
+            
+            if (metode === 'Offline') {
+                validateLocationRealtime();
+            } else {
+                // Sembunyikan feedback jika pilih Online
+                locationFeedback.classList.add('hidden');
+                locationDataInput.value = '';
+            }
+        });
+    });
+
+    // 3. Fungsi Validasi Lokasi Real-time
+    function validateLocationRealtime() {
+        // Tampilkan loading state
+        showFeedback('Memvalidasi lokasi...', 'Sedang mengecek koneksi jaringan dan koordinat GPS...', 'loading');
+
+        // Coba ambil GPS (opsional)
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latLng = `${position.coords.latitude},${position.coords.longitude}`;
+                    locationDataInput.value = latLng;
+                    sendValidationRequest('Offline', latLng);
+                },
+                (error) => {
+                    console.warn("Geolocation error:", error.message);
+                    // Jika GPS gagal, tetap kirim request (fallback ke IP di backend)
+                    sendValidationRequest('Offline', null);
+                },
+                { timeout: 5000 }
+            );
+        } else {
+            sendValidationRequest('Offline', null);
+        }
+    }
+
+    function sendValidationRequest(metode, locationData) {
+        fetch(`/api/rapat/${uuid}/validasi-lokasi`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                metode_kehadiran: metode,
+                location_data: locationData
+            })
+        })
+        .then(res => res.json())
+        .then(response => {
+            if (response.success) {
+                if (response.is_lokasi_valid) {
+                    showFeedback('Lokasi Valid', response.catatan, 'success');
+                } else {
+                    showFeedback('Lokasi Tidak Terverifikasi', response.catatan, 'error');
+                }
+            }
+        })
+        .catch(err => {
+            console.error("Validation error:", err);
+            showFeedback('Gagal Validasi', 'Terjadi kesalahan saat menghubungi server.', 'error');
+        });
+    }
+
+    function showFeedback(title, message, type) {
+        locationFeedback.classList.remove('hidden', 'bg-green-50', 'bg-red-50', 'bg-blue-50', 'border-green-200', 'border-red-200', 'border-blue-200');
+        
+        let icon = '';
+        let bgColor = '';
+        let borderColor = '';
+        let textColor = '';
+
+        if (type === 'success') {
+            bgColor = 'bg-green-50';
+            borderColor = 'border-green-200';
+            textColor = 'text-green-800';
+            icon = '<svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+        } else if (type === 'error') {
+            bgColor = 'bg-red-50';
+            borderColor = 'border-red-200';
+            textColor = 'text-red-800';
+            icon = '<svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+        } else {
+            bgColor = 'bg-blue-50';
+            borderColor = 'border-blue-200';
+            textColor = 'text-blue-800';
+            icon = '<svg class="h-6 w-6 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>';
+        }
+
+        locationFeedback.classList.add(bgColor, borderColor);
+        feedbackMessage.className = `font-bold ${textColor}`;
+        feedbackMessage.textContent = title;
+        feedbackDetail.textContent = message;
+        feedbackIconContainer.innerHTML = icon;
+    }
 });
 </script>
 @endpush
