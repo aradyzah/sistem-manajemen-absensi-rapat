@@ -19,6 +19,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Hidden;
 use Filament\Tables\Columns\TextColumn;
 use App\Filament\Resources\RapatResource\Pages\ViewKehadiranRapat;
+use App\Filament\Resources\RapatResource\RelationManagers;
 use Filament\Forms\Components\Section;
 use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
@@ -282,6 +283,13 @@ class RapatResource extends Resource
         $data['user_id'] = auth()->id();
 
         return $data;
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            RelationManagers\NotulensiRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
