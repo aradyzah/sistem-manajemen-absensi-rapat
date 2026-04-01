@@ -34,4 +34,10 @@
     </div>
 
     {{ $this->table }}
+
+    <div class="mt-8">
+        <form wire:submit="saveNotulensi">
+            {{ $this->notulensiForm }}
+        </form>
+    </div>
 </x-filament-panels::page>

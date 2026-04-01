@@ -39,57 +39,130 @@ class ViewKehadiranRapat extends Page implements HasTable
                 ->label('Nama')
                 ->searchable()
                 ->sortable()
-                ->limit(30)
-                ->tooltip(fn ($record) => $record->nama),
-
-            Tables\Columns\BadgeColumn::make('status')
-                ->label('Jenis Peserta')
-                ->sortable()
-                ->searchable()
-                ->colors([
-                    'info' => fn ($state) => $state === 'pegawai',
-                    'warning' => fn ($state) => $state === 'eksternal',
-                ])
-                ->formatStateUsing(fn ($state) => ucfirst($state)),
+                ->weight('bold'),
 
             Tables\Columns\TextColumn::make('nip_nik')
                 ->label('NIP/NIK')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->nip_nik),
+                ->searchable()
+                ->sortable(),
 
             Tables\Columns\TextColumn::make('unit_kerja')
                 ->label('Unit Kerja')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->unit_kerja),
+                ->searchable(),
 
-            Tables\Columns\TextColumn::make('jabatan_tugas')
-                ->label('Jabatan/Tugas')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->jabatan_tugas),
+            Tables\Columns\TextColumn::make('metode_kehadiran')
+                ->label('Metode')
+                ->badge()
+                ->color(fn (?string $state): string => match ($state) {
+                    'Online'  => 'info',
+                    'Offline' => 'success',
+                    default   => 'gray',
+                }),
 
-            Tables\Columns\TextColumn::make('instansi')
-                ->label('Instansi')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->instansi),
-
-            Tables\Columns\TextColumn::make('no_telepon')
-                ->label('No. Telepon')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->no_telepon),
-
-            Tables\Columns\TextColumn::make('email')
-                ->label('Email')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->email),
+            Tables\Columns\IconColumn::make('is_lokasi_valid')
+                ->label('Lokasi')
+                ->boolean()
+                ->trueIcon('heroicon-o-check-circle')
+                ->falseIcon('heroicon-o-x-circle')
+                ->trueColor('success')
+                ->falseColor('danger')
+                ->tooltip(fn ($record) => $record->catatan_validasi ?? '-'),
 
             Tables\Columns\ImageColumn::make('tanda_tangan')
-                ->label('Tanda Tangan'),
+                ->label('TTD')
+                ->disk('public') // Pastikan disk sesuai konfigurasi
+                ->width(100)
+                ->height(50),
 
             Tables\Columns\TextColumn::make('created_at')
-                ->label('Created At')
-                ->limit(20)
-                ->tooltip(fn ($record) => $record->created_at),
+                ->label('Waktu Absen')
+                ->dateTime('H:i')
+                ->sortable(),
         ];
+    }
+
+    /**
+     * Define the form for Notulensi (Method B)
+     */
+    protected function getForms(): array
+    {
+        return [
+            'notulensiForm' => $this->makeForm()
+                ->schema([
+                    \Filament\Forms\Components\Section::make('Notulensi Rapat')
+                        ->description('Catat hasil pembahasan, keputusan, dan tindak lanjut rapat di sini.')
+                        ->schema([
+                            \Filament\Forms\Components\Grid::make(2)
+                                ->schema([
+                                    TextInput::make('pimpinan_rapat')
+                                        ->label('Pimpinan Rapat')
+                                        ->placeholder('Nama Pimpinan yang memimpin rapat')
+                                        ->required(),
+                                    TextInput::make('sekretaris')
+                                        ->label('Sekretaris/Notulis')
+                                        ->placeholder('Nama orang yang mencatat rapat')
+                                        ->required(),
+                                ]),
+                            \Filament\Forms\Components\RichEditor::make('isi_notulensi')
+                                ->label('Pembahasan Rapat')
+                                ->placeholder('Tuliskan detail jalannya rapat di sini...')
+                                ->required()
+                                ->columnSpanFull(),
+                            \Filament\Forms\Components\Grid::make(2)
+                                ->schema([
+                                    \Filament\Forms\Components\RichEditor::make('daftar_keputusan')
+                                        ->label('Daftar Keputusan')
+                                        ->placeholder('Tuliskan poin-poin keputusan yang disepakati')
+                                        ->columnSpan(1),
+                                    \Filament\Forms\Components\RichEditor::make('tindak_lanjut')
+                                        ->label('Tindak Lanjut')
+                                        ->placeholder('Tuliskan rencana aksi setelah rapat ini')
+                                        ->columnSpan(1),
+                                ]),
+                        ])
+                        ->footerActions([
+                            \Filament\Forms\Components\Actions\Action::make('saveNotulensi')
+                                ->label('Simpan Notulensi')
+                                ->submit('notulensiForm')
+                                ->color('primary')
+                                ->icon('heroicon-o-check-circle'),
+                        ]),
+                ])
+                ->statePath('notulensiData'),
+        ];
+    }
+
+    public $notulensiData = [];
+
+    public function mount($record): void
+    {
+        $this->record = $record;
+        
+        // Load existing notulensi data if available
+        $rapat = \App\Models\Rapat::find($this->record);
+        if ($rapat && $rapat->notulensi) {
+            $this->notulensiForm->fill($rapat->notulensi->toArray());
+        } else {
+            // Default fill if empty
+            $this->notulensiForm->fill([
+                'sekretaris' => auth()->user()->name,
+            ]);
+        }
+    }
+
+    public function saveNotulensi(): void
+    {
+        $data = $this->notulensiForm->getState();
+        
+        \App\Models\Notulensi::updateOrCreate(
+            ['rapat_id' => $this->record],
+            $data
+        );
+
+        \Filament\Notifications\Notification::make()
+            ->title('Notulensi Berhasil Disimpan')
+            ->success()
+            ->send();
     }
 
 
